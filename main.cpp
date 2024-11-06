@@ -8,12 +8,13 @@ template <typename K, typename V>
 // HashNode class
 class HashNode {
 public:
-    V value;
     K key;
+    V value;
 
     // Constructor of HashNode
     HashNode(K key, V value) : key(key), value(value) {}
 };
+
 
 // Template for generic type
 template <typename K, typename V>
