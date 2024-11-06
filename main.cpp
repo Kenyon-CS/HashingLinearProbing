@@ -1,178 +1,162 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <string>
 using namespace std;
 
-// template for generic type
+// Template for a generic type
 template <typename K, typename V>
 
-// Hashnode class
+// HashNode class
 class HashNode {
 public:
-  V value;
-  K key;
+    V value;
+    K key;
 
-  // Constructor of hashnode
-  HashNode(K key, V value) {
-    this->value = value;
-    this->key = key;
-  }
+    // Constructor of HashNode
+    HashNode(K key, V value) : key(key), value(value) {}
 };
 
-// template for generic type
+// Template for generic type
 template <typename K, typename V>
 
-// Our own Hashmap class
+// Our own HashMap class
 class HashMap {
-  // hash element array
-  HashNode<K, V> **arr;
-  int capacity;
-  // current size
-  int size;
-  // dummy node
-  HashNode<K, V> *dummy;
+    HashNode<K, V> **arr;
+    int capacity;
+    int size;
+    HashNode<K, V> *dummy;
 
 public:
-  HashMap() {
-    // Initial capacity of hash array
-    capacity = 20;
-    size = 0;
-    arr = new HashNode<K, V> *[capacity];
-
-    // Initialise all elements of array as NULL
-    for (int i = 0; i < capacity; i++)
-      arr[i] = NULL;
-
-    // dummy node with value and key -1
-    dummy = new HashNode<K, V>(-1, "");
-  }
-  // This implements hash function to find index
-  // for a key
-  int hashCode(K key) { return key % capacity; }
-
-  // Function to add key value pair
-  void insertNode(K key, V value) {
-    HashNode<K, V> *temp = new HashNode<K, V>(key, value);
-
-    // Apply hash function to find index for given key
-    int hashIndex = hashCode(key);
-
-    // find next free space
-    while (arr[hashIndex] != NULL && arr[hashIndex]->key != key &&
-           arr[hashIndex]->key != -1) {
-      hashIndex++;
-      hashIndex %= capacity;
+    HashMap(int capacity = 20) : capacity(capacity), size(0) {
+        arr = new HashNode<K, V> *[capacity];
+        for (int i = 0; i < capacity; i++)
+            arr[i] = nullptr;
+        dummy = new HashNode<K, V>(K(), V());
     }
 
-    // if new node to be inserted
-    // increase the current size
-    if (arr[hashIndex] == NULL || arr[hashIndex]->key == -1)
-      size++;
-    arr[hashIndex] = temp;
-  }
-
-  // Function to delete a key value pair
-  V deleteNode(int key) {
-    // Apply hash function
-    // to find index for given key
-    int hashIndex = hashCode(key);
-
-    // finding the node with given key
-    while (arr[hashIndex] != NULL) {
-      // if node found
-      if (arr[hashIndex]->key == key) {
-        HashNode<K, V> *temp = arr[hashIndex];
-
-        // Insert dummy node here for further use
-        arr[hashIndex] = dummy;
-
-        // Reduce size
-        size--;
-        return temp->value;
-      }
-      hashIndex++;
-      hashIndex %= capacity;
+    ~HashMap() {
+        for (int i = 0; i < capacity; i++) {
+            if (arr[i] && arr[i] != dummy)
+                delete arr[i];
+        }
+        delete[] arr;
+        delete dummy;
     }
 
-    // If not found return ""
-    return "";
-  }
+    // Hash function to compute index
+    int hashCode(K key) { return static_cast<int>(hash<K>{}(key) % capacity); }
 
-  // Function to search the value for a given key
-  V get(int key) {
-    // Apply hash function to find index for given key
-    int hashIndex = hashCode(key);
-    int counter = 0;
+    // Function to add key-value pair
+    void insertNode(K key, V value) {
+        int hashIndex = hashCode(key);
+        int startIndex = hashIndex;
 
-    // finding the node with given key
-    while (arr[hashIndex] != NULL) { // int counter =0; // BUG!
+        while (arr[hashIndex] != nullptr && arr[hashIndex]->key != key &&
+               arr[hashIndex] != dummy) {
+            hashIndex = (hashIndex + 1) % capacity;
+            if (hashIndex == startIndex) {
+                cout << "Hash table is full, cannot insert!" << endl;
+                return;
+            }
+        }
 
-      if (counter++ > capacity) // to avoid infinite loop
-        return NULL;
+        if (arr[hashIndex] == nullptr || arr[hashIndex] == dummy)
+            size++;
 
-      // if node found return its value
-      if (arr[hashIndex]->key == key)
-        return arr[hashIndex]->value;
-      hashIndex++;
-      hashIndex %= capacity;
+        arr[hashIndex] = new HashNode<K, V>(key, value);
     }
-    // If not found return ""
-    return "";
-  }
 
-  // Return current size
-  int sizeofMap() { return size; }
+    // Function to delete a key-value pair
+    V deleteNode(K key) {
+        int hashIndex = hashCode(key);
+        int startIndex = hashIndex;
 
-  // Return true if size is 0
-  bool isEmpty() { return size == 0; }
+        while (arr[hashIndex] != nullptr) {
+            if (arr[hashIndex]->key == key) {
+                HashNode<K, V> *temp = arr[hashIndex];
+                arr[hashIndex] = dummy;
+                size--;
+                V deletedValue = temp->value;
+                delete temp;
+                return deletedValue;
+            }
+            hashIndex = (hashIndex + 1) % capacity;
+            if (hashIndex == startIndex) break;
+        }
 
-  // Function to display the stored key value pairs
-  void display() {
-    for (int i = 0; i < capacity; i++) {
-      if (arr[i] != NULL && arr[i]->key != -1)
-        cout << "key = " << arr[i]->key << " value = " << arr[i]->value << endl;
+        cout << "Key not found!" << endl;
+        return V();
     }
-  }
+
+    // Function to get the value for a given key
+    V get(K key) {
+        int hashIndex = hashCode(key);
+        int startIndex = hashIndex;
+        int counter = 0;
+
+        while (arr[hashIndex] != nullptr) {
+            if (counter++ > capacity) // to avoid infinite loop
+                return V();
+
+            if (arr[hashIndex]->key == key)
+                return arr[hashIndex]->value;
+
+            hashIndex = (hashIndex + 1) % capacity;
+            if (hashIndex == startIndex) break;
+        }
+
+        return V();
+    }
+
+    // Return current size
+    int sizeofMap() const { return size; }
+
+    // Check if the table is empty
+    bool isEmpty() const { return size == 0; }
+
+    // Function to display the stored key-value pairs
+    void display() const {
+        for (int i = 0; i < capacity; i++) {
+            if (arr[i] != nullptr && arr[i] != dummy)
+                cout << "key = " << arr[i]->key << ", value = " << arr[i]->value << endl;
+        }
+    }
 };
 
-// Driver method to test map class
+// Driver method to test HashMap class
 int main() {
-  HashMap<int, string> *h = new HashMap<int, string>;
-  int key;
-  string value;
+    HashMap<int, string> hTable;
+    int key;
+    string value;
 
-  while (1) {
-    if (h->isEmpty()) {
-      cout << "Table is empty." << endl;
-    } else {
-      cout << "Table size: " << h->sizeofMap() << endl;
-    }
-    cout << "Add: 1, Lookup 2, Delete 3, Display 4, Exit 5: ";
-    int opt;
-    cin >> opt;
-    if (opt == 1) {
-      cout << "Enter key and value:";
-      cin >> key >> value;
-      h->insertNode(key, value);
-    } else if (opt == 2) {
-      cout << "Enter key to lookup:";
-      cin >> key;
-      value = h->get(key);
-      if (value != "") {
-        cout << "Found: " << h->get(key) << endl;
-      } else {
-        cout << "Not found!" << endl;
-      }
-    } else if (opt == 3) {
-      cout << "Enter key to delete:";
-      cin >> key;
-      h->deleteNode(key);
-    } else if (opt == 4) {
-      h->display();
-    } else if (opt == 5) {
-      h->display();
-    } else {
-      cout << "Bad option:" << endl;
-    }
-  }
+    while (true) {
+        cout << "\n1. Add, 2. Lookup, 3. Delete, 4. Display, 5. Exit: ";
+        int opt;
+        cin >> opt;
 
-  return 0;
+        if (opt == 1) {
+            cout << "Enter key and value: ";
+            cin >> key >> value;
+            hTable.insertNode(key, value);
+        } else if (opt == 2) {
+            cout << "Enter key to lookup: ";
+            cin >> key;
+            value = hTable.get(key);
+            if (!value.empty())
+                cout << "Found: " << value << endl;
+            else
+                cout << "Not found!" << endl;
+        } else if (opt == 3) {
+            cout << "Enter key to delete: ";
+            cin >> key;
+            hTable.deleteNode(key);
+        } else if (opt == 4) {
+            hTable.display();
+        } else if (opt == 5) {
+            break;
+        } else {
+            cout << "Invalid option!" << endl;
+        }
+    }
+
+    return 0;
 }
