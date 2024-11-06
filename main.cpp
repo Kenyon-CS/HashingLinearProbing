@@ -2,36 +2,29 @@
 #include <string>
 using namespace std;
 
-// Template for a generic type
-template <typename K, typename V>
-
-// HashNode class
+// HashNode class for int to string mapping
 class HashNode {
 public:
-    K key;
-    V value;
+    int key;
+    string value;
 
     // Constructor of HashNode
-    HashNode(K key, V value) : key(key), value(value) {}
+    HashNode(int key, const string& value) : key(key), value(value) {}
 };
 
-
-// Template for generic type
-template <typename K, typename V>
-
-// Our own HashMap class
+// HashMap class for mapping integers to strings
 class HashMap {
-    HashNode<K, V> **arr;
+    HashNode **arr;
     int capacity;
     int size;
-    HashNode<K, V> *dummy;
+    HashNode *dummy;
 
 public:
     HashMap(int capacity = 20) : capacity(capacity), size(0) {
-        arr = new HashNode<K, V> *[capacity];
+        arr = new HashNode *[capacity];
         for (int i = 0; i < capacity; i++)
             arr[i] = nullptr;
-        dummy = new HashNode<K, V>(K(), V());
+        dummy = new HashNode(-1, "");
     }
 
     ~HashMap() {
@@ -43,14 +36,17 @@ public:
         delete dummy;
     }
 
-    // Hash function to compute index
-    int hashCode(K key) { return static_cast<int>(hash<K>{}(key) % capacity); }
+    // Hash function for integer keys
+    int hashCode(int key) const {
+        return key % capacity;
+    }
 
     // Function to add key-value pair
-    void insertNode(K key, V value) {
+    void insertNode(int key, const string& value) {
         int hashIndex = hashCode(key);
         int startIndex = hashIndex;
 
+        // Linear probing to resolve collisions
         while (arr[hashIndex] != nullptr && arr[hashIndex]->key != key &&
                arr[hashIndex] != dummy) {
             hashIndex = (hashIndex + 1) % capacity;
@@ -63,20 +59,20 @@ public:
         if (arr[hashIndex] == nullptr || arr[hashIndex] == dummy)
             size++;
 
-        arr[hashIndex] = new HashNode<K, V>(key, value);
+        arr[hashIndex] = new HashNode(key, value);
     }
 
     // Function to delete a key-value pair
-    V deleteNode(K key) {
+    string deleteNode(int key) {
         int hashIndex = hashCode(key);
         int startIndex = hashIndex;
 
         while (arr[hashIndex] != nullptr) {
             if (arr[hashIndex]->key == key) {
-                HashNode<K, V> *temp = arr[hashIndex];
+                HashNode *temp = arr[hashIndex];
                 arr[hashIndex] = dummy;
                 size--;
-                V deletedValue = temp->value;
+                string deletedValue = temp->value;
                 delete temp;
                 return deletedValue;
             }
@@ -85,18 +81,18 @@ public:
         }
 
         cout << "Key not found!" << endl;
-        return V();
+        return "";
     }
 
     // Function to get the value for a given key
-    V get(K key) {
+    string get(int key) const {
         int hashIndex = hashCode(key);
         int startIndex = hashIndex;
         int counter = 0;
 
         while (arr[hashIndex] != nullptr) {
             if (counter++ > capacity) // to avoid infinite loop
-                return V();
+                return "";
 
             if (arr[hashIndex]->key == key)
                 return arr[hashIndex]->value;
@@ -105,7 +101,7 @@ public:
             if (hashIndex == startIndex) break;
         }
 
-        return V();
+        return "";
     }
 
     // Return current size
@@ -125,7 +121,7 @@ public:
 
 // Driver method to test HashMap class
 int main() {
-    HashMap<int, string> hTable;
+    HashMap hTable;
     int key;
     string value;
 
@@ -133,13 +129,17 @@ int main() {
         cout << "\n1. Add, 2. Lookup, 3. Delete, 4. Display, 5. Exit: ";
         int opt;
         cin >> opt;
+        cin.ignore(); // Ignore newline after option
 
         if (opt == 1) {
-            cout << "Enter key and value: ";
-            cin >> key >> value;
+            cout << "Enter key (integer): ";
+            cin >> key;
+            cin.ignore();
+            cout << "Enter value (string): ";
+            getline(cin, value);
             hTable.insertNode(key, value);
         } else if (opt == 2) {
-            cout << "Enter key to lookup: ";
+            cout << "Enter key to lookup (integer): ";
             cin >> key;
             value = hTable.get(key);
             if (!value.empty())
@@ -147,7 +147,7 @@ int main() {
             else
                 cout << "Not found!" << endl;
         } else if (opt == 3) {
-            cout << "Enter key to delete: ";
+            cout << "Enter key to delete (integer): ";
             cin >> key;
             hTable.deleteNode(key);
         } else if (opt == 4) {
